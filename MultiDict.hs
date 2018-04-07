@@ -26,23 +26,32 @@ pad i = replicate i ' '
 instance (Show a, Show b) => Show (MultiDict a b) where
   show x = "{" ++ padMD 0 x ++ "}"
 
---foldMD :: ??
-foldMD = undefined
+{- Fold toma una funcion para el Entry, una funcion para el Multi, el MultiDic y devuelve algo de tipo c -}
+foldMD :: c -> (a -> b -> c -> c) -> (a -> c -> c -> c) -> MultiDict a b -> c
+foldMD f1 _ _ Nil = f1
+foldMD f1 f2 f3 (Entry a b dic) = f2 a b (foldMD f1 f2 f3 dic)
+foldMD f1 f2 f3 (Multi a dic1 dic2) = f3 a (foldMD f1 f2 f3 dic1) (foldMD f1 f2 f3 dic2)
 
 recMD :: b  -> (a -> c -> MultiDict a c -> b -> b) -> (a -> MultiDict a c -> MultiDict a c -> b -> b -> b) -> MultiDict a c -> b
-recMD = undefined
+recMD b f1 f2 Nil = b
+recMD b f1 f2 (Entry a val dic) = f1 a val dic (recMD b f1 f2 dic)
+recMD b f1 f2 (Multi a dic1 dic2) = f2 a dic1 dic2 (recMD b f1 f2 dic1) (recMD b f1 f2 dic2)
 
 profundidad :: MultiDict a b -> Integer
-profundidad = undefined
+profundidad = foldMD  0 (\x b acum -> 1 + acum) (\x acum1 acum2 -> ( max acum1 acum2 ) )
 
 --Cantidad total de claves definidas en todos los niveles.
 tamaño :: MultiDict a b -> Integer
-tamaño = undefined
+tamaño = foldMD  0 (\x b acum -> 1 + acum) (\x acum1 acum2 -> 1 + acum1 + acum2 )
 
 podarHasta = foldMD
           (\_ _ _ -> Nil)
           (\k v r l p lorig->cortarOSeguir l p $ Entry k v $ r (l-1) p lorig)
           (\k r1 r2 l p lorig ->cortarOSeguir l p $ Multi k (r1 lorig (p-1) lorig) (r2 (l-1) p lorig))
+ {- m -}
+ {- long -}
+ {- proof  -}
+ {- long -}
   where cortarOSeguir l p x = if l <= 0 || p <= 0 then Nil else x
 
 -- Poda a lo ancho y en profundidad.
