@@ -102,8 +102,7 @@ tablas :: Integer -> MultiDict Integer Integer
 tablas desde = filtrarTablas desde $ tablasAux 0 desde
 
 serialize :: (Show a, Show b) => MultiDict a b -> String
-{- serialize = foldMD (putStrLn "[ ]") (\x b str -> putStrLn ("['" ++ x ++ "':" ++ b ++"," ++ "]" )) (\x str1 str2  -> putStrLn("['" ++  "]") ) -}
-serialize = undefined
+serialize = foldMD "[ ]" (\x b str -> ("[" ++ (show x) ++ ": " ++ (show b ) ++", " ++ str ++"]" )) (\x str1 str2  -> ("[" ++ ( show x ) ++ ": "++ str1 ++ ", " ++ str2 ++ "]") )
 -------------------------------------------------------- Ejercicio 3 - FIN ---------------------------------------------------
 
 -------------------------------------------------------- Ejercicio 7 - INICIO ------------------------------------------------
