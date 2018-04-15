@@ -38,7 +38,7 @@ recMD b f1 f2 (Entry a val dic) = f1 a val dic (recMD b f1 f2 dic)
 recMD b f1 f2 (Multi a dic1 dic2) = f2 a dic1 dic2 (recMD b f1 f2 dic1) (recMD b f1 f2 dic2)
 
 profundidad :: MultiDict a b -> Integer
-profundidad = foldMD  0 (\x b acum -> 1 + acum) (\x acum1 acum2 -> ( max acum1 acum2 ) )
+profundidad = foldMD  0 (\x b acum -> max 1 acum ) (\x acum1 acum2 -> (max (1 + acum1) acum2))
 
 --Cantidad total de claves definidas en todos los niveles.
 tamaño :: MultiDict a b -> Integer
@@ -66,6 +66,7 @@ tablas :: Integer -> MultiDict Integer Integer
 tablas = undefined
 
 serialize :: (Show a, Show b) => MultiDict a b -> String
+{- serialize = foldMD (putStrLn "[ ]") (\x b str -> putStrLn ("['" ++ x ++ "':" ++ b ++"," ++ "]" )) (\x str1 str2  -> putStrLn("['" ++  "]") ) -}
 serialize = undefined
 
 mapMD :: (a->c) -> (b->d) -> MultiDict a b -> MultiDict c d
