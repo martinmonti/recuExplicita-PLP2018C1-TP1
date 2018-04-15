@@ -77,12 +77,21 @@ definir (x:xs) v d = (recMD (\ks -> cadena v ks)
        (\k1 m1 m2 r1 r2 (k:ks) -> if k1 == k then armarDic ks k m2 (r1 ks) else Multi k1 m1 (r2 (k:ks)))) d (x:xs)
   where armarDic ks k resto interior = if null ks then Entry k v resto else Multi k interior resto
 
+-------------------------------------------------------- Ejercicio 7 - INICIO ------------------------------------------------
 obtener :: Eq a => [a] -> MultiDict a b -> Maybe b
-obtener = undefined
+obtener rama md = foldr (\par rec -> if rama==(fst par) then Just (snd par) else rec ) Nothing $ juntarRamasYValores md
 
+-- Dado un MultiDict a b, md, devuelve una lista con todas las "ramas" del diccionario (visto como árbol) y sus valores
+juntarRamasYValores:: MultiDict a b -> [([a],b)]
+juntarRamasYValores md = foldMD [] (\k v listaRec -> (((k:[]),v):listaRec)) (\k listaMDAnidado listaMDLocatario -> (agregarPrefijo k listaMDAnidado)++listaMDLocatario) md
+
+agregarPrefijo:: a -> [([a],b)] -> [([a],b)]
+agregarPrefijo k lista = map (\par -> ((k:fst par),snd par)) lista
 
 todosLosParesDesde:: Integer -> [(Integer,Integer)]
 todosLosParesDesde n = [ (i,j) | x <- [1..], i<-[n..x] , j<-[1..x],x==i+j]
+
+-------------------------------------------------------- Ejercicio 7 - FIN ---------------------------------------------------
 
 -- Busca sólo en el primer nivel, y devueve algo sólo si es un MultiDict anidado
 buscarMDParaI::Eq a => a -> MultiDict a b -> MultiDict a b    
