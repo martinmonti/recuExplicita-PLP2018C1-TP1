@@ -60,28 +60,6 @@ podarHasta = foldMD
 podar :: Integer -> Integer -> MultiDict a b -> MultiDict a b
 podar long prof m = podarHasta m long prof long
 
---Dado un entero n, define las claves de n en adelante, cada una con su tabla de multiplicar.
---Es decir, el valor asociado a la clave i es un diccionario con las claves de 1 en adelante, donde el valor de la clave j es i*j.
-tablas :: Integer -> MultiDict Integer Integer
-tablas = undefined
-
-serialize :: (Show a, Show b) => MultiDict a b -> String
-{- serialize = foldMD (putStrLn "[ ]") (\x b str -> putStrLn ("['" ++ x ++ "':" ++ b ++"," ++ "]" )) (\x str1 str2  -> putStrLn("['" ++  "]") ) -}
-serialize = undefined
-
-mapMD :: (a->c) -> (b->d) -> MultiDict a b -> MultiDict c d
-mapMD = undefined
-
---Filtra recursivamente mirando las claves de los subdiccionarios.
-filterMD :: (a->Bool) -> MultiDict a b -> MultiDict a b
-filterMD = undefined
-
-enLexicon :: [String] -> MultiDict String b -> MultiDict String b
-enLexicon = undefined
-
-cadena :: Eq a => b ->  [a] -> MultiDict a b
-cadena = undefined
-
 --Agrega a un multidiccionario una cadena de claves [c1, ..., cn], una por cada nivel,
 --donde el valor asociado a cada clave es un multidiccionario con la clave siguiente, y así sucesivamente hasta
 --llegar a la última clave de la lista, cuyo valor es el dato de tipo b pasado como parámetro.
@@ -91,6 +69,71 @@ definir (x:xs) v d = (recMD (\ks -> cadena v ks)
        (\k1 m1 m2 r1 r2 (k:ks) -> if k1 == k then armarDic ks k m2 (r1 ks) else Multi k1 m1 (r2 (k:ks)))) d (x:xs)
   where armarDic ks k resto interior = if null ks then Entry k v resto else Multi k interior resto
 
+-------------------------------------------------------- Ejercicio 3 - INICIO ------------------------------------------------
+-- Dado un natural N, devuelve TODOS los pares de naturales (i,j), sin repeticiones, tales que i>=n.
+todosLosParesDesde:: Integer -> [(Integer,Integer)]
+todosLosParesDesde n = [ (i,j) | x <- [1..], i<-[n..x] , j<-[1..x],x==i+j]
+
+-- Dado un a y un MultiDict a b, busca en el primer nivel de md un mdAnidado a la clave a. No contempla que no exista.
+buscarMDParaI::Eq a => a -> MultiDict a b -> MultiDict a b    
+buscarMDParaI elemBuscado Nil = Nil
+buscarMDParaI elemBuscado (Entry k v md) = buscarMDParaI elemBuscado md
+buscarMDParaI elemBuscado (Multi k mdAnidado mdLocatario) | k == elemBuscado = mdAnidado
+                                                          | otherwise = buscarMDParaI elemBuscado mdLocatario
+
+-- Función auxiliar de tablas: genera las tablas de multiplicar, con basura intercalada que hay que filtrar
+tablasAux::Integer -> Integer -> MultiDict Integer Integer
+tablasAux indexAux minI = Multi i (agregar i j $ buscarMDParaI i mdRec ) $ mdRec
+  where mdRec = tablasAux (indexAux+1) minI
+        agregar elemExterno elemInterno md = Entry elemInterno (elemInterno*elemExterno) $ md
+        i = fst $ (todosLosParesDesde minI) !! (fromIntegral indexAux)
+        j = snd $ (todosLosParesDesde minI) !! (fromIntegral indexAux)
+
+-- Filtra la basura dada por tablasAux
+filtrarTablas:: Integer ->  MultiDict Integer Integer -> MultiDict Integer Integer
+filtrarTablas desde Nil = undefined
+filtrarTablas desde (Entry _ _ _) = undefined
+filtrarTablas desde (Multi i tabla rec) | i== desde = Multi i tabla $ filtrarTablas (desde+1) rec
+                                        | otherwise = filtrarTablas desde rec
+
+--Dado un entero n, define las claves de n en adelante, cada una con su tabla de multiplicar.
+--Es decir, el valor asociado a la clave i es un diccionario con las claves de 1 en adelante, donde el valor de la clave j es i*j.
+tablas :: Integer -> MultiDict Integer Integer
+tablas desde = filtrarTablas desde $ tablasAux 0 desde
+
+serialize :: (Show a, Show b) => MultiDict a b -> String
+{- serialize = foldMD (putStrLn "[ ]") (\x b str -> putStrLn ("['" ++ x ++ "':" ++ b ++"," ++ "]" )) (\x str1 str2  -> putStrLn("['" ++  "]") ) -}
+serialize = undefined
+-------------------------------------------------------- Ejercicio 3 - FIN ---------------------------------------------------
+
+-------------------------------------------------------- Ejercicio 7 - INICIO ------------------------------------------------
 obtener :: Eq a => [a] -> MultiDict a b -> Maybe b
-obtener = undefined
+obtener rama md = foldr (\par rec -> if rama==(fst par) then Just (snd par) else rec ) Nothing $ juntarRamasYValores md
+
+-- Dado un MultiDict a b, md, devuelve una lista con todas las "ramas" del diccionario (visto como árbol) y sus valores
+juntarRamasYValores:: MultiDict a b -> [([a],b)]
+juntarRamasYValores md = foldMD [] (\k v listaRec -> (((k:[]),v):listaRec)) (\k listaMDAnidado listaMDLocatario -> (agregarPrefijo k listaMDAnidado)++listaMDLocatario) md
+
+agregarPrefijo:: a -> [([a],b)] -> [([a],b)]
+agregarPrefijo k lista = map (\par -> ((k:fst par),snd par)) lista
+-------------------------------------------------------- Ejercicio 7 - FIN ---------------------------------------------------
+
+mapMD :: (a->c) -> (b->d) -> MultiDict a b -> MultiDict c d
+mapMD f g = foldMD Nil (\a b m -> Entry (f a) (g b) m) (\a m1 m2 -> Multi (f a) m1 m2 )
+
+--Filtra recursivamente mirando las claves de los subdiccionarios.
+filterMD :: (a->Bool) -> MultiDict a b -> MultiDict a b
+filterMD f = foldMD Nil (\a b m ->if (f a) then Entry a b m else m) (\a m1 m2 -> if (f a) then Multi a m1 m2 else m2)
+
+--Si en el filterMD cambiamos lo que hay en el then con lo del else enLexicon anda xD
+--enLexicon l m = mapMD (map toLower) (\x -> x) (filterMD (`elem` l) m)
+enLexicon :: [String] -> MultiDict String b -> MultiDict String b
+enLexicon l m = filterMD (`elem` l) (mapMD (map toLower) (\x -> x) m)
+
+
+--Falta una vuelta, el fold haria multi de entry todo el tiempo y no multi de multi
+--Como le meto un caso base ?
+
+cadena :: Eq a => b ->  [a] -> MultiDict a b
+cadena v claves = foldr (\x md -> Multi x md Nil) (Entry (last claves) v $ Nil) (init claves) 
 
