@@ -2,6 +2,8 @@ module MultiDict where
 
 import Data.Maybe
 import Data.Char
+import Data.List
+import Data.Either
 
 data MultiDict a b = Nil | Entry a b (MultiDict a b) | Multi a (MultiDict a b) (MultiDict a b) deriving Eq
 
@@ -107,31 +109,28 @@ serialize = foldMD "[ ]" (\x b str -> ("[" ++ (show x) ++ ": " ++ (show b ) ++",
 
 -------------------------------------------------------- Ejercicio 7 - INICIO ------------------------------------------------
 obtener :: Eq a => [a] -> MultiDict a b -> Maybe b
-obtener rama md = foldr (\par rec -> if rama==(fst par) then Just (snd par) else rec ) Nothing $ juntarRamasYValores md
+obtener rama md = if null rama then Nothing else last  $ snd $ obtenerAux rama md
 
--- Dado un MultiDict a b, md, devuelve una lista con todas las "ramas" del diccionario (visto como árbol) y sus valores
-juntarRamasYValores:: MultiDict a b -> [([a],b)]
-juntarRamasYValores md = foldMD [] (\k v listaRec -> (((k:[]),v):listaRec)) (\k listaMDAnidado listaMDLocatario -> (agregarPrefijo k listaMDAnidado)++listaMDLocatario) md
+obtenerAux::Eq a => [a] -> MultiDict a b -> (MultiDict a b,[Maybe b])
+obtenerAux rama md = mapAccumL (\mdAcum clave -> (getMDRec clave mdAcum , getValor clave mdAcum)) md rama
+    where getMDRec clave mdAcum = either (\_ -> Nil) (\mdRec -> mdRec) (getSubArbol clave mdAcum) 
+          getValor clave mdAcum = either (\v -> v) (\_ -> Nothing) (getSubArbol clave mdAcum)
 
-agregarPrefijo:: a -> [([a],b)] -> [([a],b)]
-agregarPrefijo k lista = map (\par -> ((k:fst par),snd par)) lista
+getSubArbol::Eq a=> a -> (MultiDict a b) -> (Either (Maybe b) (MultiDict a b))
+getSubArbol clave md = recMD (Right Nil)
+ (\k v mdRec appRec -> if (k==clave) then (Left $ Just v) else appRec) 
+ (\k mdV mdRec appV appRec -> if(k==clave) then (Right mdV) else appRec)
+ md
 -------------------------------------------------------- Ejercicio 7 - FIN ---------------------------------------------------
 
 mapMD :: (a->c) -> (b->d) -> MultiDict a b -> MultiDict c d
 mapMD f g = foldMD Nil (\a b m -> Entry (f a) (g b) m) (\a m1 m2 -> Multi (f a) m1 m2 )
 
---Filtra recursivamente mirando las claves de los subdiccionarios.
 filterMD :: (a->Bool) -> MultiDict a b -> MultiDict a b
 filterMD f = foldMD Nil (\a b m ->if (f a) then Entry a b m else m) (\a m1 m2 -> if (f a) then Multi a m1 m2 else m2)
 
---Si en el filterMD cambiamos lo que hay en el then con lo del else enLexicon anda xD
---enLexicon l m = mapMD (map toLower) (\x -> x) (filterMD (`elem` l) m)
 enLexicon :: [String] -> MultiDict String b -> MultiDict String b
 enLexicon l m = filterMD (`elem` l) (mapMD (map toLower) (\x -> x) m)
-
-
---Falta una vuelta, el fold haria multi de entry todo el tiempo y no multi de multi
---Como le meto un caso base ?
 
 cadena :: Eq a => b ->  [a] -> MultiDict a b
 cadena v claves = foldr (\x md -> Multi x md Nil) (Entry (last claves) v $ Nil) (init claves) 
