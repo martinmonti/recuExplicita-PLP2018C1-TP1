@@ -106,13 +106,30 @@ datosLlamada =
     Entry "OtherDNRole" "1 [RoleOrigination]" $
     Entry "OtherDN" "3584622309" Nil
 
+vacio :: MultiDict String Integer
+vacio = Nil
+
+hipervacio :: MultiDict String String 
+hipervacio = Nil
+
+unicaClave :: MultiDict Integer Integer
+unicaClave = Entry 1 0 $ Nil
+
+usuarioHotmail :: MultiDict String String
+usuarioHotmail = Entry "LEO@hoTmail.com" "leo" $ Nil
+
+usuariosHotmail :: MultiDict String String
+usuariosHotmail = Entry "ALAN@hoTmail.com" "LaN" $ Entry "TINcho@hoTmail.com" "***0" $ Entry "BigotTte@gmail.COM" "RAP" $ Entry "TeGOBi@suisa.com" "GRS" $ Nil
     
+hiperinfinito :: MultiDict String String  
+hiperinfinito = Multi "a" (Entry "ab" ":)" hiperinfinito) (mapMD (++"_") (++"|") hiperinfinito)
+
 --Ejecución de los tests
 main :: IO Counts
 main = do runTestTT allTests
 
 allTests = test [
-  "ejercicio1a" ~: tests2,
+  "ejercicio1a" ~: tests1,
   "ejercicio1b" ~: tests2,
   "ejercicio2a" ~: tests3,
   "ejercicio2b" ~: tests4,
@@ -130,36 +147,60 @@ tests1 = test [
 tests2 = test [
    recMD 0 (\_ _ _ ->id) (\_ m1 _ r1 r2->if isNil m1 then r2 else 1+r1+r2) cuatroNiveles ~=? 3
   ]
+
 tests3 = test [
    profundidad cuatroNiveles ~=? 4,
-   profundidad datosLlamada ~=? 2
+   profundidad datosLlamada ~=? 2,
+   profundidad vacio ~=? 0,
+   profundidad unicaClave ~=? 1,
+	profundidad (podar 3 100 infinito) ~=? 2
   ]
 tests4 = test [
    tamaño cuatroNiveles ~=? 7,
    (tamaño $ podar 5 3 datosLlamada) ~=? 10,
-   tamaño datosLlamada ~=? 89
+   tamaño datosLlamada ~=? 89,
+   tamaño vacio ~=? 0,
+   tamaño unicaClave ~=? 1,
+   tamaño (podar 3 100 infinito) ~=? 12
   ]
+
 tests5 = test [
    (podar 5 3 $ tablas 2) ~=? (podar 5 2 $ tablas 2),
    (profundidad $ podar 20 20 infinito) ~=? 2,
    (tamaño $ podar 5 3 $ tablas 2) ~=? 30
   ]
+
 tests6 = test [
-  serialize cuatroNiveles ~=? "[1: 'a', [2: [2: 'b', [3: [3: 'c', [4: [4: 'd', [ ]], [ ]]], [ ]]], [ ]]]"
+  serialize cuatroNiveles ~=? "[1: 'a', [2: [2: 'b', [3: [3: 'c', [4: [4: 'd', [ ]], [ ]]], [ ]]], [ ]]]",
+  serialize vacio ~=? "[ ]",
+  serialize unicaClave ~=? "[1: 0, [ ]]"
   ]
+  
 tests7 = test [
    (profundidad $ podar 10 5 superinfinito) ~=? 5,
    (profundidad $ podar 3 10 superinfinito) ~=? 10,
-   (tamaño $ podar 10 5 superinfinito) ~=? 82010
+   (tamaño $ podar 10 5 superinfinito) ~=? 82010,
+   mapMD (++ "a") (+1) vacio ~=? vacio,
+	serialize (mapMD (+1) (*2) $ podar 3 100 infinito) ~=? "[2: [2: 2, [3: 4, [4: 6, [ ]]]], [3: [2: 4, [3: 8, [4: 12, [ ]]]], [4: [2: 6, [3: 12, [4: 18, [ ]]]], [ ]]]]"
   ]
+
 tests8 = test [
    (serialize $ filterMD even $ Entry 4 'e' cuatroNiveles) ~=? "[4: 'e', [2: [2: 'b', [ ]], [ ]]]",
-   (serialize $ enLexicon ["extensions", "originationdn", "no_answer_action", "ani", "dnis", "userdata", "customersegment", "statusafterinbound", "connid"] datosLlamada) ~=? "[\"extensions\": [\"originationdn\": \"3584622309\", [\"no_answer_action\": \"notready\", [ ]]], [\"ani\": \"3584622309\", [\"dnis\": \"1665\", [\"userdata\": [\"customersegment\": \"default\", [\"ani\": \"3584622309\", [\"statusafterinbound\": \"Amarillo\", [ ]]]], [\"connid\": \"000202BA29A61AD6\", [ ]]]]]]"
+   (serialize $ enLexicon ["extensions", "originationdn", "no_answer_action", "ani", "dnis", "userdata", "customersegment", "statusafterinbound", "connid"] datosLlamada) ~=? "[\"extensions\": [\"originationdn\": \"3584622309\", [\"no_answer_action\": \"notready\", [ ]]], [\"ani\": \"3584622309\", [\"dnis\": \"1665\", [\"userdata\": [\"customersegment\": \"default\", [\"ani\": \"3584622309\", [\"statusafterinbound\": \"Amarillo\", [ ]]]], [\"connid\": \"000202BA29A61AD6\", [ ]]]]]]",
+   filterMD (\x->True) vacio ~=? vacio,
+   serialize (filterMD (\c-> c `mod` 3 == 0) $ podar 10 4 infinito) ~=?  "[3: [3: 9, [6: 18, [9: 27, [ ]]]], [6: [3: 18, [6: 36, [9: 54, [ ]]]], [9: [3: 27, [6: 54, [9: 81, [ ]]]], [ ]]]]"	,
+   enLexicon [] vacio ~=? vacio,
+   enLexicon [] (podar 10 5 hiperinfinito) ~=? hipervacio,
+   enLexicon ["leo@hotmail.com"] (podar 10 5 usuarioHotmail) ~=? (Entry "leo@hotmail.com" "leo"  Nil),
+   enLexicon ["ricardo@colombo.com","alan@hotmail.com","bigottte@gmail.com"] (podar 10 5 usuariosHotmail) ~=? (Entry "alan@hotmail.com" "LaN" $ Entry "bigottte@gmail.com" "RAP" Nil)
   ]
+
 tests9 = test [
    (serialize $ definir [2,3] 'c' cuatroNiveles) ~=? "[1: 'a', [2: [2: 'b', [3: 'c', [ ]]], [ ]]]",
-   (profundidad $ definir [4] 'g' $ definir [4] 'e' $ definir [2,4] 'f' $ definir [2,3,4,5] 'e' cuatroNiveles) ~=? 4
+   (profundidad $ definir [4] 'g' $ definir [4] 'e' $ definir [2,4] 'f' $ definir [2,3,4,5] 'e' cuatroNiveles) ~=? 4,
+   cadena 2 [] ~=? vacio
   ]
+
 tests10 = test [
    (obtener [4] $ definir [4] 'g' $ definir [4] 'e' $ definir [2,4] 'f' $ definir [2,3,4,5] 'e' cuatroNiveles) ~=? Just 'g',
    obtener [2,3,3] cuatroNiveles ~=? Just 'c',
