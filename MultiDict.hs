@@ -67,36 +67,11 @@ podarHasta = foldMD
 podar :: Integer -> Integer -> MultiDict a b -> MultiDict a b
 podar long prof m = podarHasta m long prof long
 
--- Dado un natural N, devuelve TODOS los pares de naturales (i,j), sin repeticiones, tales que i>=n.
-todosLosParesDesde:: Integer -> [(Integer,Integer)]
-todosLosParesDesde n = [ (i,j) | x <- [1..], i<-[n..x] , j<-[1..x],x==i+j]
+tablas::Integer -> MultiDict Integer Integer
+tablas n = Multi n (entradaTabla n 1) $ tablas (n+1)
 
--- Dado un a y un MultiDict a b, busca en el primer nivel de md un mdAnidado a la clave a. No contempla que no exista.
-buscarMDParaI::Eq a => a -> MultiDict a b -> MultiDict a b    
-buscarMDParaI elemBuscado Nil = Nil
-buscarMDParaI elemBuscado (Entry k v md) = buscarMDParaI elemBuscado md
-buscarMDParaI elemBuscado (Multi k mdAnidado mdLocatario) | k == elemBuscado = mdAnidado
-                                                          | otherwise = buscarMDParaI elemBuscado mdLocatario
-
--- Función auxiliar de tablas: genera las tablas de multiplicar, con basura intercalada que hay que filtrar
-tablasAux::Integer -> Integer -> MultiDict Integer Integer
-tablasAux indexAux minI = Multi i (agregar i j $ buscarMDParaI i mdRec ) $ mdRec
-  where mdRec = tablasAux (indexAux+1) minI
-        agregar elemExterno elemInterno md = Entry elemInterno (elemInterno*elemExterno) $ md
-        i = fst $ (todosLosParesDesde minI) !! (fromIntegral indexAux)
-        j = snd $ (todosLosParesDesde minI) !! (fromIntegral indexAux)
-
--- Filtra la basura dada por tablasAux
-filtrarTablas:: Integer ->  MultiDict Integer Integer -> MultiDict Integer Integer
-filtrarTablas desde Nil = undefined
-filtrarTablas desde (Entry _ _ _) = undefined
-filtrarTablas desde (Multi i tabla rec) | i== desde = Multi i tabla $ filtrarTablas (desde+1) rec
-                                        | otherwise = filtrarTablas desde rec
-
---Dado un entero n, define las claves de n en adelante, cada una con su tabla de multiplicar.
---Es decir, el valor asociado a la clave i es un diccionario con las claves de 1 en adelante, donde el valor de la clave j es i*j.
-tablas :: Integer -> MultiDict Integer Integer
-tablas desde = filtrarTablas desde $ tablasAux 0 desde
+entradaTabla::Integer -> Integer -> MultiDict Integer Integer
+entradaTabla i n = Entry n (i*n) $ entradaTabla i (n+1)
 -------------------------------------------------------- Ejercicio 3 - FIN ---------------------------------------------------
 
 -------------------------------------------------------- Ejercicio 4 - INICIO ------------------------------------------------
