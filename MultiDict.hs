@@ -55,10 +55,6 @@ podarHasta = foldMD
           (\_ _ _ -> Nil)
           (\k v r l p lorig->cortarOSeguir l p $ Entry k v $ r (l-1) p lorig)
           (\k r1 r2 l p lorig ->cortarOSeguir l p $ Multi k (r1 lorig (p-1) lorig) (r2 (l-1) p lorig))
- {- m -}
- {- long -}
- {- proof  -}
- {- long -}
   where cortarOSeguir l p x = if l <= 0 || p <= 0 then Nil else x
 
 -- Poda a lo ancho y en profundidad.
@@ -106,24 +102,15 @@ definir (x:xs) v d = (recMD (\ks -> cadena v ks)
        (\k1 m1 m2 r1 r2 (k:ks) -> if k1 == k then armarDic ks k m2 (r1 ks) else Multi k1 m1 (r2 (k:ks)))) d (x:xs)
   where armarDic ks k resto interior = if null ks then Entry k v resto else Multi k interior resto
 
+
 obtener :: Eq a => [a] -> MultiDict a b -> Maybe b
-obtener rama md = if null rama then Nothing else last  $ snd $ obtenerAux rama md
+obtener rama md = foldMD (\algo -> Nothing) obtenerEntry obtenerMulti md rama
 
--- Dado un árbol md, obtiene los subárboles anidados siguiendo la lista de claves rama. Si encuentra un Entry, lo
--- acumula en una lista. El último elemento de lista será el elemento correspondiente a la rama, si existe tal.
--- Si no existe elemento para la rama dada, la lista concluirá con un Nothing.
-obtenerAux::Eq a => [a] -> MultiDict a b -> (MultiDict a b,[Maybe b])
-obtenerAux rama md = mapAccumL (\mdAcum clave -> (getMDRec clave mdAcum , getValor clave mdAcum)) md rama
-    where getMDRec clave mdAcum = either (\_ -> Nil) (\mdRec -> mdRec) (getSubArbol clave mdAcum) 
-          getValor clave mdAcum = either (\v -> v) (\_ -> Nothing) (getSubArbol clave mdAcum)
+obtenerEntry :: Eq a => a -> b -> ([a]->Maybe b) -> [a] -> Maybe b
+obtenerEntry k v rec rama = if(null rama) then Nothing else if (head rama)==k then Just v else rec rama
 
--- Dado un MultiDict y una clave, busca en el primer nivel un valor ó un multidiccionario anidado para tal clave.
--- Devuelve el valor ó MultiDict, según corresponda.
-getSubArbol::Eq a=> a -> (MultiDict a b) -> (Either (Maybe b) (MultiDict a b))
-getSubArbol clave md = recMD (Right Nil)
- (\k v mdRec appRec -> if (k==clave) then (Left $ Just v) else appRec) 
- (\k mdV mdRec appV appRec -> if(k==clave) then (Right mdV) else appRec)
- md
+obtenerMulti :: Eq a => a -> ([a]->Maybe b) -> ([a]->Maybe b) -> [a] -> Maybe b
+obtenerMulti k v rec rama = if(null rama) then Nothing else if (head rama)==k then v (tail rama) else rec rama
 -------------------------------------------------------- Ejercicio 7 - FIN ---------------------------------------------------
 
 
