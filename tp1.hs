@@ -14,6 +14,9 @@ cuatroNiveles = Entry 1 'a' (Multi 2 (Entry 2 'b' (Multi 3 (Entry 3 'c' (Multi 4
 superinfinito :: MultiDict Integer Integer
 superinfinito = Multi 1 (Entry 1 1 superinfinito) (mapMD (+1) (*2) superinfinito)
 
+dicABCD :: MultiDict Char Integer
+dicABCD = definir "abd" 1 $ cadena 2 "abc"
+
 datosLlamada :: MultiDict String String --Cualquier parecido con los datos de una llamada que hizo un cliente a un banco son absolutamente...
 datosLlamada = 
     Entry "EventSequenceNumber" "21866615" $
@@ -205,5 +208,11 @@ tests10 = test [
    (obtener [4] $ definir [4] 'g' $ definir [4] 'e' $ definir [2,4] 'f' $ definir [2,3,4,5] 'e' cuatroNiveles) ~=? Just 'g',
    obtener [2,3,3] cuatroNiveles ~=? Just 'c',
    obtener [2,3,5] cuatroNiveles ~=? Nothing,
+	obtener "a" dicABCD ~=? Nothing,
+	obtener "abd" dicABCD ~=? Just 1,
+	obtener "abc" dicABCD ~=? Just 2,
+	obtener "af" dicABCD ~=? Nothing,
+	obtener "abcc" dicABCD ~=? Nothing,
+	obtener "abcd" dicABCD ~=? Nothing,
    obtener [6,7] infinito ~=? Just 42
   ]

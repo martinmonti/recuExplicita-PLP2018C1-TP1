@@ -104,10 +104,10 @@ definir (x:xs) v d = (recMD (\ks -> cadena v ks)
 
 
 obtener :: Eq a => [a] -> MultiDict a b -> Maybe b
-obtener rama md = foldMD (\algo -> Nothing) obtenerEntry obtenerMulti md rama
+obtener rama md = foldMD (\_ -> Nothing) obtenerEntry obtenerMulti md rama
 
 obtenerEntry :: Eq a => a -> b -> ([a]->Maybe b) -> [a] -> Maybe b
-obtenerEntry k v rec rama = if(null rama) then Nothing else if (head rama)==k then Just v else rec rama
+obtenerEntry k v rec rama = if(null rama) then Nothing else if ((head rama)==k && null(tail rama)) then Just v else rec rama
 
 obtenerMulti :: Eq a => a -> ([a]->Maybe b) -> ([a]->Maybe b) -> [a] -> Maybe b
 obtenerMulti k v rec rama = if(null rama) then Nothing else if (head rama)==k then v (tail rama) else rec rama
